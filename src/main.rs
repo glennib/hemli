@@ -47,6 +47,14 @@ fn main() -> Result<()> {
         Command::Delete { namespace, secret } => cmd_delete(&namespace, &secret)?,
         Command::List { namespace } => cmd_list(namespace.as_deref())?,
         Command::Inspect { namespace, secret } => cmd_inspect(&namespace, &secret)?,
+        Command::Edit {
+            namespace,
+            secret,
+            ttl,
+            clear_ttl,
+            source_sh,
+            source_cmd,
+        } => cmd_edit(&namespace, &secret, ttl, clear_ttl, source_sh, source_cmd)?,
     }
 
     Ok(())
@@ -154,6 +162,44 @@ fn cmd_inspect(namespace: &str, secret: &str) -> Result<()> {
         }
         .into()),
     }
+}
+
+fn cmd_edit(
+    namespace: &str,
+    secret: &str,
+    ttl: Option<i64>,
+    clear_ttl: bool,
+    source_sh: Option<String>,
+    source_cmd: Option<String>,
+) -> Result<()> {
+    if ttl.is_none() && !clear_ttl && source_sh.is_none() && source_cmd.is_none() {
+        return Err(HemliError::NoModifications.into());
+    }
+
+    let mut stored = store::get_secret(namespace, secret)?.ok_or_else(|| HemliError::NotFound {
+        namespace: namespace.to_string(),
+        secret: secret.to_string(),
+    })?;
+
+    if clear_ttl {
+        stored.ttl_seconds = None;
+        stored.recalculate_expires_at();
+    } else if let Some(ttl) = ttl {
+        stored.ttl_seconds = Some(ttl);
+        stored.recalculate_expires_at();
+    }
+
+    if let Some(sh) = source_sh {
+        stored.source_command = Some(sh);
+        stored.source_type = Some(SourceType::Sh);
+    } else if let Some(cmd) = source_cmd {
+        stored.source_command = Some(cmd);
+        stored.source_type = Some(SourceType::Cmd);
+    }
+
+    store::set_secret(namespace, secret, &stored)?;
+    eprintln!("Updated secret '{secret}' in namespace '{namespace}'");
+    Ok(())
 }
 
 fn cmd_list(namespace: Option<&str>) -> Result<()> {

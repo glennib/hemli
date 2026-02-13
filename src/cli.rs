@@ -70,6 +70,32 @@ pub enum Command {
         /// Name of the secret
         secret: String,
     },
+
+    /// Edit metadata of a cached secret (TTL, source command)
+    Edit {
+        /// Namespace for the secret
+        #[arg(short, long)]
+        namespace: String,
+
+        /// Name of the secret
+        secret: String,
+
+        /// New TTL in seconds
+        #[arg(long, conflicts_with = "clear_ttl")]
+        ttl: Option<i64>,
+
+        /// Remove TTL (secret will never expire)
+        #[arg(long, conflicts_with = "ttl")]
+        clear_ttl: bool,
+
+        /// New source command (sh -c)
+        #[arg(long, conflicts_with = "source_cmd")]
+        source_sh: Option<String>,
+
+        /// New source command (direct)
+        #[arg(long, conflicts_with = "source_sh")]
+        source_cmd: Option<String>,
+    },
 }
 
 #[cfg(test)]
@@ -218,6 +244,122 @@ mod tests {
     #[test]
     fn inspect_missing_namespace_errors() {
         let result = Cli::try_parse_from(["hemli", "inspect", "mysecret"]);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn parse_edit_with_ttl() {
+        let cli = Cli::try_parse_from(["hemli", "edit", "-n", "myns", "mysecret", "--ttl", "7200"])
+            .unwrap();
+        match cli.command {
+            Command::Edit {
+                namespace,
+                secret,
+                ttl,
+                clear_ttl,
+                source_sh,
+                source_cmd,
+            } => {
+                assert_eq!(namespace, "myns");
+                assert_eq!(secret, "mysecret");
+                assert_eq!(ttl, Some(7200));
+                assert!(!clear_ttl);
+                assert!(source_sh.is_none());
+                assert!(source_cmd.is_none());
+            }
+            _ => panic!("expected Edit"),
+        }
+    }
+
+    #[test]
+    fn parse_edit_with_clear_ttl() {
+        let cli = Cli::try_parse_from(["hemli", "edit", "-n", "ns", "sec", "--clear-ttl"]).unwrap();
+        match cli.command {
+            Command::Edit { clear_ttl, ttl, .. } => {
+                assert!(clear_ttl);
+                assert!(ttl.is_none());
+            }
+            _ => panic!("expected Edit"),
+        }
+    }
+
+    #[test]
+    fn edit_ttl_and_clear_ttl_conflict() {
+        let result = Cli::try_parse_from([
+            "hemli",
+            "edit",
+            "-n",
+            "ns",
+            "sec",
+            "--ttl",
+            "60",
+            "--clear-ttl",
+        ]);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn parse_edit_with_source_sh() {
+        let cli =
+            Cli::try_parse_from(["hemli", "edit", "-n", "ns", "sec", "--source-sh", "echo hi"])
+                .unwrap();
+        match cli.command {
+            Command::Edit {
+                source_sh,
+                source_cmd,
+                ..
+            } => {
+                assert_eq!(source_sh.as_deref(), Some("echo hi"));
+                assert!(source_cmd.is_none());
+            }
+            _ => panic!("expected Edit"),
+        }
+    }
+
+    #[test]
+    fn parse_edit_with_source_cmd() {
+        let cli = Cli::try_parse_from([
+            "hemli",
+            "edit",
+            "-n",
+            "ns",
+            "sec",
+            "--source-cmd",
+            "my-cmd arg1",
+        ])
+        .unwrap();
+        match cli.command {
+            Command::Edit {
+                source_sh,
+                source_cmd,
+                ..
+            } => {
+                assert!(source_sh.is_none());
+                assert_eq!(source_cmd.as_deref(), Some("my-cmd arg1"));
+            }
+            _ => panic!("expected Edit"),
+        }
+    }
+
+    #[test]
+    fn edit_source_sh_and_source_cmd_conflict() {
+        let result = Cli::try_parse_from([
+            "hemli",
+            "edit",
+            "-n",
+            "ns",
+            "sec",
+            "--source-sh",
+            "echo hi",
+            "--source-cmd",
+            "my-cmd",
+        ]);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn edit_missing_namespace_errors() {
+        let result = Cli::try_parse_from(["hemli", "edit", "mysecret", "--ttl", "60"]);
         assert!(result.is_err());
     }
 
