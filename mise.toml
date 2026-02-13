@@ -32,6 +32,24 @@ run = "cargo nextest run --all-targets"
 description = "Build release binary"
 run = "cargo build"
 
+[tasks."docs:update"]
+description = "Regenerate CLI help sections in README.md"
+run = "bash scripts/update-readme-help.sh"
+
+[tasks."docs:check"]
+description = "Check that README.md CLI help sections are up-to-date"
+run = """
+cp README.md README.md.bak
+bash scripts/update-readme-help.sh
+if ! diff -q README.md README.md.bak > /dev/null 2>&1; then
+  echo "ERROR: README.md help sections are out of date. Run 'mise run docs:update' to fix." >&2
+  diff -u README.md.bak README.md || true
+  mv README.md.bak README.md
+  exit 1
+fi
+rm README.md.bak
+"""
+
 [tasks.ci]
 description = "Run all CI checks"
-depends = ["fmt:check", "clippy", "test", "build"]
+depends = ["fmt:check", "clippy", "test", "build", "docs:check"]

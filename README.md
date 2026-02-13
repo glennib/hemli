@@ -52,77 +52,97 @@ hemli delete -n myapp db_password
 
 ## Commands
 
+<!-- BEGIN GENERATED HELP -->
+
+### `hemli`
+
+```
+Secret management CLI for local development
+
+hemli caches secrets in the OS-native keyring and fetches them on-demand from external providers via shell commands. Secrets are organized by namespace and automatically re-fetched when their TTL expires.
+
+Usage: hemli <COMMAND>
+
+Commands:
+  get          Get a secret, fetching from source if needed
+  delete       Delete a secret from the keyring
+  list         List stored secrets
+  inspect      Inspect a cached secret, showing full metadata as JSON
+  edit         Edit metadata of a cached secret (TTL, source command)
+  completions  Generate shell completion scripts
+  help         Print this message or the help of the given subcommand(s)
+
+Options:
+  -h, --help
+          Print help (see a summary with '-h')
+```
+
 ### `hemli get`
 
-Retrieve a secret, fetching from an external source if not cached or expired.
-
 ```
-hemli get -n <namespace> <secret> [OPTIONS]
-```
+Get a secret, fetching from source if needed
 
-| Flag | Description |
-|------|-------------|
-| `-n, --namespace <NS>` | Namespace for the secret (required) [`HEMLI_NAMESPACE`] |
-| `--source-sh <CMD>` | Fetch command run via `sh -c` |
-| `--source-cmd <CMD>` | Fetch command run directly (split on whitespace) |
-| `--ttl <SECONDS>` | Cache TTL in seconds |
-| `--force-refresh` | Refresh from source even if cached [`HEMLI_FORCE_REFRESH`] |
-| `--no-refresh` | Only return cached value, error if not found [`HEMLI_NO_REFRESH`] |
-| `--no-store` | Don't persist the fetched secret [`HEMLI_NO_STORE`] |
+Checks the keyring cache first. If the secret is missing or expired, fetches it from the source command, stores the result in the keyring, and prints the value to stdout.
 
-`--source-sh` and `--source-cmd` are mutually exclusive. `--force-refresh` and `--no-refresh` are mutually exclusive.
+When a secret is stored with a source command, subsequent calls will automatically re-fetch using that stored source when the TTL expires -- no need to pass --source-sh/--source-cmd again.
 
-When a secret is stored with a source command, subsequent `get` calls will automatically re-fetch using the stored source when the secret expires -- no need to pass `--source-sh`/`--source-cmd` again.
+Usage: hemli get [OPTIONS] --namespace <NAMESPACE> <SECRET>
 
-### `hemli inspect`
+Arguments:
+  <SECRET>
+          Name of the secret
+          
+          The identifier for this secret within its namespace. Used as the keyring account name.
 
-Show full metadata for a cached secret as JSON.
+Options:
+  -n, --namespace <NAMESPACE>
+          Namespace for the secret
+          
+          Groups secrets by project or environment. The keyring service name is "hemli:<namespace>", so secrets in different namespaces are fully isolated.
+          
+          [env: HEMLI_NAMESPACE=]
 
-```
-hemli inspect -n <namespace> <secret>
-```
+      --force-refresh
+          Force refresh from source even if cached
+          
+          Re-fetches the secret from the source command regardless of whether a valid cached value exists. Mutually exclusive with --no-refresh.
+          
+          [env: HEMLI_FORCE_REFRESH=]
 
-Returns the stored JSON including `value`, `created_at`, `source_command`, `source_type`, `ttl_seconds`, and `expires_at`. Errors if the secret is not cached.
+      --no-refresh
+          Only return cached value, never refresh
+          
+          Returns the cached secret even if expired. Errors if no cached value exists. Mutually exclusive with --force-refresh.
+          
+          [env: HEMLI_NO_REFRESH=]
 
-### `hemli edit`
+      --no-store
+          Don't store the fetched secret in keyring
+          
+          Fetches and prints the secret but does not persist it in the keyring or update the index. Useful for one-off lookups.
+          
+          [env: HEMLI_NO_STORE=]
 
-Modify metadata of a cached secret without re-fetching from the source.
+      --ttl <TTL>
+          TTL in seconds for the cached secret
+          
+          Sets how long the cached secret is considered valid. After this duration, the next get call will re-fetch from the source. If omitted, falls back to the TTL stored with the existing cached secret, or no expiration if none was ever set.
 
-```
-hemli edit -n <namespace> <secret> [OPTIONS]
-```
+      --source-sh <SOURCE_SH>
+          Source command to run via sh -c
+          
+          The command string is passed to the system shell as "sh -c <CMD>". Supports pipes, redirects, and shell syntax. Mutually exclusive with --source-cmd.
 
-| Flag | Description |
-|------|-------------|
-| `-n, --namespace <NS>` | Namespace for the secret (required) |
-| `--ttl <SECONDS>` | Set a new TTL in seconds |
-| `--clear-ttl` | Remove TTL (secret will never expire) |
-| `--source-sh <CMD>` | Set a new source command run via `sh -c` |
-| `--source-cmd <CMD>` | Set a new source command run directly |
+      --source-cmd <SOURCE_CMD>
+          Source command to run directly
+          
+          The command string is split on whitespace and executed directly without a shell. Use this when you don't need shell features. Mutually exclusive with --source-sh.
 
-At least one modification flag is required. `--ttl` and `--clear-ttl` are mutually exclusive. `--source-sh` and `--source-cmd` are mutually exclusive.
-
-Editing the TTL recalculates the expiration time from the original `created_at` timestamp -- it does not reset the creation time.
-
-### `hemli delete`
-
-Remove a secret from the keyring.
-
-```
-hemli delete -n <namespace> <secret>
-```
-
-Deleting a non-existent secret is a no-op.
-
-### `hemli list`
-
-List cached secrets.
-
-```
-hemli list [-n <namespace>]
+  -h, --help
+          Print help (see a summary with '-h')
 ```
 
-Output is tab-separated: `namespace\tsecret\tcreated_at`. If `-n` is provided, results are filtered to that namespace.
+<!-- END GENERATED HELP -->
 
 ## Stored secret format
 
@@ -138,27 +158,6 @@ Secrets are stored as JSON in the OS keyring under the service name `hemli:<name
   "expires_at": "2025-01-15T11:30:00Z"
 }
 ```
-
-## Environment variables
-
-Several CLI flags can be set via environment variables, reducing repetitive typing. CLI flags always override environment variables when both are present.
-
-| Environment variable | Equivalent flag | Subcommands |
-|---------------------|----------------|-------------|
-| `HEMLI_NAMESPACE` | `-n, --namespace` | get, delete, list, inspect, edit |
-| `HEMLI_NO_STORE` | `--no-store` | get |
-| `HEMLI_FORCE_REFRESH` | `--force-refresh` | get |
-| `HEMLI_NO_REFRESH` | `--no-refresh` | get |
-
-For boolean flags, any non-empty value enables the flag (e.g., `HEMLI_NO_STORE=1`). Unset the variable to disable it.
-
-This is especially useful with [direnv](https://direnv.net/) to set project-wide defaults. For example, add to your `.envrc`:
-
-```sh
-export HEMLI_NAMESPACE=myproject
-```
-
-Then all hemli commands in that directory will default to the `myproject` namespace without needing `-n myproject` each time.
 
 ## Namespacing
 
