@@ -1,0 +1,37 @@
+[tools]
+cargo-binstall = "latest"
+"cargo:cargo-dist" = "latest"
+"cargo:cargo-nextest" = "latest"
+"cargo:release-plz" = "latest"
+
+[tasks.fmt]
+description = "Format code"
+run = "cargo fmt --all"
+
+[tasks."fmt:check"]
+description = "Check code formatting"
+run = "cargo fmt --all -- --check"
+
+[tasks."fmt:nightly"]
+description = "Format code with nightly"
+run = "cargo +nightly fmt --all"
+
+[tasks."fmt:check:nightly"]
+description = "Check code formatting with nightly"
+run = "cargo +nightly fmt --all -- --check"
+
+[tasks.clippy]
+description = "Run clippy lints"
+run = "cargo clippy --all-targets --all-features -- -D warnings"
+
+[tasks.test]
+description = "Run tests"
+run = "cargo nextest run --all-targets"
+
+[tasks.build]
+description = "Build release binary"
+run = "cargo build"
+
+[tasks.ci]
+description = "Run all CI checks"
+depends = ["fmt:check", "clippy", "test", "build"]

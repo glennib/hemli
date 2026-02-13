@@ -1,0 +1,15 @@
+[package]
+name = "hemli"
+version = "0.1.0"
+edition = "2024"
+repository = "https://github.com/glennib/hemli"
+description = "A secret management CLI tool which uses OS-native keyring and fetches secrets on demand"
+license = "MIT OR Apache-2.0"
+authors = ["Glenn Bitar <glennbitar@gmail.com>"]
+
+# The profile that 'dist' will build with
+[profile.dist]
+inherits = "release"
+strip = true
+lto = "fat"
+codegen-units = 1
