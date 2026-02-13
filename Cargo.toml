@@ -1,5 +1,5 @@
 [package]
-name = "hemli"
+name = "hemli-cli"
 version = "0.1.0"
 edition = "2024"
 repository = "https://github.com/glennib/hemli"
@@ -7,9 +7,30 @@ description = "A secret management CLI tool which uses OS-native keyring and fet
 license = "MIT OR Apache-2.0"
 authors = ["Glenn Bitar <glennbitar@gmail.com>"]
 
+[[bin]]
+name = "hemli"
+path = "src/main.rs"
+
 # The profile that 'dist' will build with
 [profile.dist]
 inherits = "release"
 strip = true
 lto = "fat"
 codegen-units = 1
+
+[dependencies]
+anyhow = "1.0.101"
+clap = { version = "4.5.58", features = ["derive"] }
+dirs = "6.0.0"
+jiff = { version = "0.2.20", features = ["serde"] }
+keyring = { version = "3.6.3", features = ["async-secret-service", "crypto-rust", "apple-native", "windows-native"] }
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"
+thiserror = "2.0.18"
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.22", features = ["fmt", "env-filter"] }
+
+[dev-dependencies]
+assert_cmd = "2.1.2"
+predicates = "3.1.4"
+tempfile = "3.25.0"
