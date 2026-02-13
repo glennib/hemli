@@ -6,6 +6,11 @@ pub enum HemliError {
     #[error("no source command provided and secret is not cached")]
     NoSource,
 
+    #[error(
+        "no modifications specified; provide at least one of --ttl, --clear-ttl, --source-sh, or --source-cmd"
+    )]
+    NoModifications,
+
     #[error("source command failed: {0}")]
     SourceFailed(String),
 

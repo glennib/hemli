@@ -53,6 +53,14 @@ impl StoredSecret {
             None => false,
         }
     }
+
+    pub fn recalculate_expires_at(&mut self) {
+        self.expires_at = self.ttl_seconds.map(|ttl| {
+            self.created_at
+                .checked_add(SignedDuration::from_secs(ttl))
+                .unwrap()
+        });
+    }
 }
 
 #[cfg(test)]
@@ -131,6 +139,28 @@ mod tests {
         assert_eq!(secret.source_type, Some(SourceType::Sh));
         assert_eq!(secret.ttl_seconds, Some(3600));
         assert!(secret.expires_at.is_some());
+    }
+
+    #[test]
+    fn recalculate_expires_at_with_new_ttl() {
+        let mut secret = StoredSecret::new("val".into(), None, None, Some(60));
+        let original_created_at = secret.created_at;
+        secret.ttl_seconds = Some(7200);
+        secret.recalculate_expires_at();
+        assert_eq!(secret.created_at, original_created_at);
+        let expected = original_created_at
+            .checked_add(SignedDuration::from_secs(7200))
+            .unwrap();
+        assert_eq!(secret.expires_at, Some(expected));
+    }
+
+    #[test]
+    fn recalculate_expires_at_clears_when_no_ttl() {
+        let mut secret = StoredSecret::new("val".into(), None, None, Some(60));
+        assert!(secret.expires_at.is_some());
+        secret.ttl_seconds = None;
+        secret.recalculate_expires_at();
+        assert!(secret.expires_at.is_none());
     }
 
     #[test]
