@@ -46,6 +46,7 @@ fn main() -> Result<()> {
         )?,
         Command::Delete { namespace, secret } => cmd_delete(&namespace, &secret)?,
         Command::List { namespace } => cmd_list(namespace.as_deref())?,
+        Command::Inspect { namespace, secret } => cmd_inspect(&namespace, &secret)?,
     }
 
     Ok(())
@@ -137,6 +138,22 @@ fn cmd_delete(namespace: &str, secret: &str) -> Result<()> {
 
     eprintln!("Deleted secret '{secret}' from namespace '{namespace}'");
     Ok(())
+}
+
+fn cmd_inspect(namespace: &str, secret: &str) -> Result<()> {
+    let entry = store::get_secret(namespace, secret)?;
+    match entry {
+        Some(stored) => {
+            let json = serde_json::to_string_pretty(&stored)?;
+            println!("{json}");
+            Ok(())
+        }
+        None => Err(HemliError::NotFound {
+            namespace: namespace.to_string(),
+            secret: secret.to_string(),
+        }
+        .into()),
+    }
 }
 
 fn cmd_list(namespace: Option<&str>) -> Result<()> {

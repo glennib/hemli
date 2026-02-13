@@ -60,6 +60,16 @@ pub enum Command {
         #[arg(short, long)]
         namespace: Option<String>,
     },
+
+    /// Inspect a cached secret, showing full metadata as JSON
+    Inspect {
+        /// Namespace for the secret
+        #[arg(short, long)]
+        namespace: String,
+
+        /// Name of the secret
+        secret: String,
+    },
 }
 
 #[cfg(test)]
@@ -189,6 +199,26 @@ mod tests {
             }
             _ => panic!("expected List"),
         }
+    }
+
+    #[test]
+    fn parse_inspect() {
+        let cli = Cli::try_parse_from(["hemli", "inspect", "-n", "myns", "mysecret"]).unwrap();
+        match cli.command {
+            Command::Inspect {
+                namespace, secret, ..
+            } => {
+                assert_eq!(namespace, "myns");
+                assert_eq!(secret, "mysecret");
+            }
+            _ => panic!("expected Inspect"),
+        }
+    }
+
+    #[test]
+    fn inspect_missing_namespace_errors() {
+        let result = Cli::try_parse_from(["hemli", "inspect", "mysecret"]);
+        assert!(result.is_err());
     }
 
     #[test]
