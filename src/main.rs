@@ -6,7 +6,9 @@ mod source;
 mod store;
 
 use anyhow::Result;
+use clap::CommandFactory;
 use clap::Parser;
+use clap_complete::generate;
 use tracing::debug;
 use tracing_subscriber::EnvFilter;
 
@@ -44,6 +46,10 @@ fn main() -> Result<()> {
             source_sh,
             source_cmd,
         )?,
+        Command::Completions { shell } => {
+            let mut cmd = Cli::command();
+            generate(shell, &mut cmd, "hemli", &mut std::io::stdout());
+        }
         Command::Delete { namespace, secret } => cmd_delete(&namespace, &secret)?,
         Command::List { namespace } => cmd_list(namespace.as_deref())?,
         Command::Inspect { namespace, secret } => cmd_inspect(&namespace, &secret)?,

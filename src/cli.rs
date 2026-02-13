@@ -1,5 +1,6 @@
 use clap::Parser;
 use clap::Subcommand;
+use clap_complete::Shell;
 
 /// Secret management CLI for local development
 ///
@@ -168,6 +169,17 @@ pub enum Command {
         /// "cmd". Mutually exclusive with --source-sh.
         #[arg(long, conflicts_with = "source_sh")]
         source_cmd: Option<String>,
+    },
+
+    /// Generate shell completion scripts
+    ///
+    /// Prints a completion script for the given shell to stdout. Source the
+    /// output in your shell profile, e.g.:
+    ///
+    ///   eval "$(hemli completions bash)"
+    Completions {
+        /// The shell to generate completions for
+        shell: Shell,
     },
 }
 

@@ -22,7 +22,7 @@ This project uses `mise` for task orchestration and `cargo nextest` as the test 
 
 The codebase follows a three-layer design:
 
-**CLI Layer** (`src/cli.rs`) — Clap-based argument parsing. Five subcommands: `get`, `delete`, `list`, `inspect`, `edit`. Several flags support env var fallbacks via clap's `env` attribute: `HEMLI_NAMESPACE`, `HEMLI_NO_STORE`, `HEMLI_FORCE_REFRESH`, `HEMLI_NO_REFRESH`.
+**CLI Layer** (`src/cli.rs`) — Clap-based argument parsing. Six subcommands: `get`, `delete`, `list`, `inspect`, `edit`, `completions`. Several flags support env var fallbacks via clap's `env` attribute: `HEMLI_NAMESPACE`, `HEMLI_NO_STORE`, `HEMLI_FORCE_REFRESH`, `HEMLI_NO_REFRESH`.
 
 **Command Handlers** (`src/main.rs`) — Business logic for each subcommand:
 - `cmd_get`: Check keyring cache → if expired/missing, fetch from source command → store in keyring + update index → print to stdout
@@ -30,6 +30,7 @@ The codebase follows a three-layer design:
 - `cmd_list`: Query index, optionally filter by namespace
 - `cmd_inspect`: Read cached secret from keyring and print full metadata as JSON
 - `cmd_edit`: Modify metadata (TTL, source command) of a cached secret without re-fetching
+- `completions`: Generate shell completion scripts (bash, zsh, fish, elvish, powershell) via `clap_complete`
 
 **Storage & Integration Layer:**
 - `src/store.rs` — Keyring operations. Service name convention: `hemli:<namespace>`. Secrets stored as JSON with metadata.
