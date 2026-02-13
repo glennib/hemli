@@ -62,13 +62,13 @@ hemli get -n <namespace> <secret> [OPTIONS]
 
 | Flag | Description |
 |------|-------------|
-| `-n, --namespace <NS>` | Namespace for the secret (required) |
+| `-n, --namespace <NS>` | Namespace for the secret (required) [`HEMLI_NAMESPACE`] |
 | `--source-sh <CMD>` | Fetch command run via `sh -c` |
 | `--source-cmd <CMD>` | Fetch command run directly (split on whitespace) |
 | `--ttl <SECONDS>` | Cache TTL in seconds |
-| `--force-refresh` | Refresh from source even if cached |
-| `--no-refresh` | Only return cached value, error if not found |
-| `--no-store` | Don't persist the fetched secret |
+| `--force-refresh` | Refresh from source even if cached [`HEMLI_FORCE_REFRESH`] |
+| `--no-refresh` | Only return cached value, error if not found [`HEMLI_NO_REFRESH`] |
+| `--no-store` | Don't persist the fetched secret [`HEMLI_NO_STORE`] |
 
 `--source-sh` and `--source-cmd` are mutually exclusive. `--force-refresh` and `--no-refresh` are mutually exclusive.
 
@@ -138,6 +138,27 @@ Secrets are stored as JSON in the OS keyring under the service name `hemli:<name
   "expires_at": "2025-01-15T11:30:00Z"
 }
 ```
+
+## Environment variables
+
+Several CLI flags can be set via environment variables, reducing repetitive typing. CLI flags always override environment variables when both are present.
+
+| Environment variable | Equivalent flag | Subcommands |
+|---------------------|----------------|-------------|
+| `HEMLI_NAMESPACE` | `-n, --namespace` | get, delete, list, inspect, edit |
+| `HEMLI_NO_STORE` | `--no-store` | get |
+| `HEMLI_FORCE_REFRESH` | `--force-refresh` | get |
+| `HEMLI_NO_REFRESH` | `--no-refresh` | get |
+
+For boolean flags, any non-empty value enables the flag (e.g., `HEMLI_NO_STORE=1`). Unset the variable to disable it.
+
+This is especially useful with [direnv](https://direnv.net/) to set project-wide defaults. For example, add to your `.envrc`:
+
+```sh
+export HEMLI_NAMESPACE=myproject
+```
+
+Then all hemli commands in that directory will default to the `myproject` namespace without needing `-n myproject` each time.
 
 ## Namespacing
 

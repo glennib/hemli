@@ -20,7 +20,7 @@ codegen-units = 1
 
 [dependencies]
 anyhow = "1.0.101"
-clap = { version = "4.5.58", features = ["derive"] }
+clap = { version = "4.5.58", features = ["derive", "env"] }
 dirs = "6.0.0"
 jiff = { version = "0.2.20", features = ["serde"] }
 keyring = { version = "3.6.3", features = ["async-secret-service", "crypto-rust", "apple-native", "windows-native"] }

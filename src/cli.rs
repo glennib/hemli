@@ -30,7 +30,7 @@ pub enum Command {
         /// Groups secrets by project or environment. The keyring service name
         /// is "hemli:<namespace>", so secrets in different namespaces are fully
         /// isolated.
-        #[arg(short, long)]
+        #[arg(short, long, env = "HEMLI_NAMESPACE")]
         namespace: String,
 
         /// Name of the secret
@@ -43,21 +43,21 @@ pub enum Command {
         ///
         /// Re-fetches the secret from the source command regardless of whether
         /// a valid cached value exists. Mutually exclusive with --no-refresh.
-        #[arg(long, conflicts_with = "no_refresh")]
+        #[arg(long, env = "HEMLI_FORCE_REFRESH", conflicts_with = "no_refresh")]
         force_refresh: bool,
 
         /// Only return cached value, never refresh
         ///
         /// Returns the cached secret even if expired. Errors if no cached
         /// value exists. Mutually exclusive with --force-refresh.
-        #[arg(long, conflicts_with = "force_refresh")]
+        #[arg(long, env = "HEMLI_NO_REFRESH", conflicts_with = "force_refresh")]
         no_refresh: bool,
 
         /// Don't store the fetched secret in keyring
         ///
         /// Fetches and prints the secret but does not persist it in the
         /// keyring or update the index. Useful for one-off lookups.
-        #[arg(long)]
+        #[arg(long, env = "HEMLI_NO_STORE")]
         no_store: bool,
 
         /// TTL in seconds for the cached secret
@@ -92,7 +92,7 @@ pub enum Command {
     /// non-existent secret is a no-op.
     Delete {
         /// Namespace for the secret
-        #[arg(short, long)]
+        #[arg(short, long, env = "HEMLI_NAMESPACE")]
         namespace: String,
 
         /// Name of the secret
@@ -109,7 +109,7 @@ pub enum Command {
         ///
         /// Only show secrets belonging to this namespace. If omitted, all
         /// namespaces are shown.
-        #[arg(short, long)]
+        #[arg(short, long, env = "HEMLI_NAMESPACE")]
         namespace: Option<String>,
     },
 
@@ -120,7 +120,7 @@ pub enum Command {
     /// secret is not cached.
     Inspect {
         /// Namespace for the secret
-        #[arg(short, long)]
+        #[arg(short, long, env = "HEMLI_NAMESPACE")]
         namespace: String,
 
         /// Name of the secret
@@ -134,7 +134,7 @@ pub enum Command {
     /// At least one modification flag must be provided.
     Edit {
         /// Namespace for the secret
-        #[arg(short, long)]
+        #[arg(short, long, env = "HEMLI_NAMESPACE")]
         namespace: String,
 
         /// Name of the secret
