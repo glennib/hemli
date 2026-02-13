@@ -40,6 +40,12 @@ hemli get -n myapp db_password
 # List all cached secrets
 hemli list
 
+# Inspect a cached secret's metadata
+hemli inspect -n myapp db_password
+
+# Edit metadata of a cached secret
+hemli edit -n myapp db_password --ttl 7200
+
 # Delete a cached secret
 hemli delete -n myapp db_password
 ```
@@ -67,6 +73,36 @@ hemli get -n <namespace> <secret> [OPTIONS]
 `--source-sh` and `--source-cmd` are mutually exclusive. `--force-refresh` and `--no-refresh` are mutually exclusive.
 
 When a secret is stored with a source command, subsequent `get` calls will automatically re-fetch using the stored source when the secret expires -- no need to pass `--source-sh`/`--source-cmd` again.
+
+### `hemli inspect`
+
+Show full metadata for a cached secret as JSON.
+
+```
+hemli inspect -n <namespace> <secret>
+```
+
+Returns the stored JSON including `value`, `created_at`, `source_command`, `source_type`, `ttl_seconds`, and `expires_at`. Errors if the secret is not cached.
+
+### `hemli edit`
+
+Modify metadata of a cached secret without re-fetching from the source.
+
+```
+hemli edit -n <namespace> <secret> [OPTIONS]
+```
+
+| Flag | Description |
+|------|-------------|
+| `-n, --namespace <NS>` | Namespace for the secret (required) |
+| `--ttl <SECONDS>` | Set a new TTL in seconds |
+| `--clear-ttl` | Remove TTL (secret will never expire) |
+| `--source-sh <CMD>` | Set a new source command run via `sh -c` |
+| `--source-cmd <CMD>` | Set a new source command run directly |
+
+At least one modification flag is required. `--ttl` and `--clear-ttl` are mutually exclusive. `--source-sh` and `--source-cmd` are mutually exclusive.
+
+Editing the TTL recalculates the expiration time from the original `created_at` timestamp -- it does not reset the creation time.
 
 ### `hemli delete`
 
