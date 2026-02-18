@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.3](https://github.com/glennib/hemli/compare/v0.1.2...v0.1.3) - 2026-02-18
+
+### Other
+
+- *(deps)* update rust crate clap to v4.5.59
+- Add renovate.json
+
 ## [0.1.2](https://github.com/glennib/hemli/compare/v0.1.1...v0.1.2) - 2026-02-13
 
 ### Added
