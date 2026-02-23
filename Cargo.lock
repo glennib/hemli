@@ -728,6 +728,7 @@ dependencies = [
  "clap",
  "clap_complete",
  "dirs",
+ "humantime",
  "jiff",
  "keyring",
  "predicates",
@@ -768,6 +769,12 @@ checksum = "6c49c37c09c17a53d937dfbb742eb3a961d65a994e6bcdcf37e7399d0cc8ab5e"
 dependencies = [
  "digest",
 ]
+
+[[package]]
+name = "humantime"
+version = "2.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "135b12329e5e3ce057a9f972339ea52bc954fe1e9358ef27f95e89716fbc5424"
 
 [[package]]
 name = "id-arena"

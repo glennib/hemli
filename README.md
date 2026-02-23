@@ -44,7 +44,7 @@ hemli list
 hemli inspect -n myapp db_password
 
 # Edit metadata of a cached secret
-hemli edit -n myapp db_password --ttl 7200
+hemli edit -n myapp db_password --ttl 2h
 
 # Delete a cached secret
 hemli delete -n myapp db_password
@@ -124,9 +124,11 @@ Options:
           [env: HEMLI_NO_STORE=]
 
       --ttl <TTL>
-          TTL in seconds for the cached secret
+          TTL (duration) for the cached secret
           
           Sets how long the cached secret is considered valid. After this duration, the next get call will re-fetch from the source. If omitted, falls back to the TTL stored with the existing cached secret, or no expiration if none was ever set.
+          
+          Accepts a human-readable duration (e.g. "2h", "30m", "1d12h") or a plain number of seconds.
 
       --source-sh <SOURCE_SH>
           Source command to run via sh -c
@@ -175,7 +177,7 @@ hemli get -n project-b api_key --source-sh "..."  # independent secret
 ```sh
 hemli get -n myapp db_password \
   --source-sh "gcloud secrets versions access latest --secret=db-password --project=my-project" \
-  --ttl 3600
+  --ttl 1h
 ```
 
 ### AWS Secrets Manager
@@ -183,7 +185,7 @@ hemli get -n myapp db_password \
 ```sh
 hemli get -n myapp api_key \
   --source-sh "aws secretsmanager get-secret-value --secret-id my-secret --query SecretString --output text" \
-  --ttl 3600
+  --ttl 1h
 ```
 
 ### HashiCorp Vault
@@ -191,7 +193,7 @@ hemli get -n myapp api_key \
 ```sh
 hemli get -n myapp db_password \
   --source-sh "vault kv get -field=password secret/myapp/db" \
-  --ttl 1800
+  --ttl 30m
 ```
 
 ### 1Password CLI
@@ -199,7 +201,7 @@ hemli get -n myapp db_password \
 ```sh
 hemli get -n myapp api_token \
   --source-sh "op read 'op://vault/item/field'" \
-  --ttl 7200
+  --ttl 2h
 ```
 
 ### Environment variable passthrough

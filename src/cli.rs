@@ -2,6 +2,17 @@ use clap::Parser;
 use clap::Subcommand;
 use clap_complete::Shell;
 
+/// Parse a TTL value as either a human-readable duration (e.g. "2h", "30m", "1d12h")
+/// or a plain integer (interpreted as seconds for backwards compatibility).
+fn parse_ttl(s: &str) -> Result<i64, String> {
+    if let Ok(secs) = s.parse::<i64>() {
+        return Ok(secs);
+    }
+    humantime::parse_duration(s)
+        .map(|d| d.as_secs() as i64)
+        .map_err(|e| format!("invalid TTL '{s}': {e}"))
+}
+
 /// Secret management CLI for local development
 ///
 /// hemli caches secrets in the OS-native keyring and fetches them on-demand
@@ -61,13 +72,16 @@ pub enum Command {
         #[arg(long, env = "HEMLI_NO_STORE")]
         no_store: bool,
 
-        /// TTL in seconds for the cached secret
+        /// TTL (duration) for the cached secret
         ///
         /// Sets how long the cached secret is considered valid. After this
         /// duration, the next get call will re-fetch from the source. If
         /// omitted, falls back to the TTL stored with the existing cached
         /// secret, or no expiration if none was ever set.
-        #[arg(long)]
+        ///
+        /// Accepts a human-readable duration (e.g. "2h", "30m", "1d12h")
+        /// or a plain number of seconds.
+        #[arg(long, value_parser = parse_ttl)]
         ttl: Option<i64>,
 
         /// Source command to run via sh -c
@@ -141,12 +155,15 @@ pub enum Command {
         /// Name of the secret
         secret: String,
 
-        /// New TTL in seconds
+        /// New TTL (duration)
         ///
         /// Replaces the existing TTL and recalculates the expiration time
         /// from the original creation timestamp. Mutually exclusive with
         /// --clear-ttl.
-        #[arg(long, conflicts_with = "clear_ttl")]
+        ///
+        /// Accepts a human-readable duration (e.g. "2h", "30m", "1d12h")
+        /// or a plain number of seconds.
+        #[arg(long, conflicts_with = "clear_ttl", value_parser = parse_ttl)]
         ttl: Option<i64>,
 
         /// Remove TTL (secret will never expire)
@@ -277,6 +294,40 @@ mod tests {
     }
 
     #[test]
+    fn parse_get_with_ttl_human_duration() {
+        let cli =
+            Cli::try_parse_from(["hemli", "get", "-n", "ns", "sec", "--ttl", "2h"]).unwrap();
+        match cli.command {
+            Command::Get { ttl, .. } => {
+                assert_eq!(ttl, Some(7200));
+            }
+            _ => panic!("expected Get"),
+        }
+    }
+
+    #[test]
+    fn parse_get_with_ttl_compound_duration() {
+        // matches the "1d12h" example in help text
+        let cli =
+            Cli::try_parse_from(["hemli", "get", "-n", "ns", "sec", "--ttl", "1d12h"]).unwrap();
+        match cli.command {
+            Command::Get { ttl, .. } => {
+                assert_eq!(ttl, Some(36 * 3600));
+            }
+            _ => panic!("expected Get"),
+        }
+
+        let cli =
+            Cli::try_parse_from(["hemli", "get", "-n", "ns", "sec", "--ttl", "1h30m"]).unwrap();
+        match cli.command {
+            Command::Get { ttl, .. } => {
+                assert_eq!(ttl, Some(5400));
+            }
+            _ => panic!("expected Get"),
+        }
+    }
+
+    #[test]
     fn parse_delete() {
         let cli = Cli::try_parse_from(["hemli", "delete", "-n", "myns", "mysecret"]).unwrap();
         match cli.command {
@@ -351,6 +402,20 @@ mod tests {
                 assert!(!clear_ttl);
                 assert!(source_sh.is_none());
                 assert!(source_cmd.is_none());
+            }
+            _ => panic!("expected Edit"),
+        }
+    }
+
+    #[test]
+    fn parse_edit_with_ttl_human_duration() {
+        let cli =
+            Cli::try_parse_from(["hemli", "edit", "-n", "myns", "mysecret", "--ttl", "2h"])
+                .unwrap();
+        match cli.command {
+            Command::Edit { ttl, clear_ttl, .. } => {
+                assert_eq!(ttl, Some(7200));
+                assert!(!clear_ttl);
             }
             _ => panic!("expected Edit"),
         }
