@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.3](https://github.com/glennib/hemli/compare/v0.1.2...v0.1.3) - 2026-02-23
+
+### Added
+
+- accept human-readable durations for --ttl (e.g. 2h, 30m, 1d12h)
+
+### Other
+
+- Merge pull request #13 from glennib/renovate/clap-4.x-lockfile
+- Merge pull request #15 from glennib/renovate/anyhow-1.x-lockfile
+- Merge pull request #16 from glennib/renovate/jiff-0.x-lockfile
+- fmt
+- *(deps)* update actions/cache action to v5
+- Add renovate.json
+
 ## [0.1.2](https://github.com/glennib/hemli/compare/v0.1.1...v0.1.2) - 2026-02-13
 
 ### Added
