@@ -2,8 +2,9 @@ use clap::Parser;
 use clap::Subcommand;
 use clap_complete::Shell;
 
-/// Parse a TTL value as either a human-readable duration (e.g. "2h", "30m", "1d12h")
-/// or a plain integer (interpreted as seconds for backwards compatibility).
+/// Parse a TTL value as either a human-readable duration (e.g. "2h", "30m",
+/// "1d12h") or a plain integer (interpreted as seconds for backwards
+/// compatibility).
 fn parse_ttl(s: &str) -> Result<i64, String> {
     if let Ok(secs) = s.parse::<i64>() {
         return Ok(secs);
@@ -295,8 +296,7 @@ mod tests {
 
     #[test]
     fn parse_get_with_ttl_human_duration() {
-        let cli =
-            Cli::try_parse_from(["hemli", "get", "-n", "ns", "sec", "--ttl", "2h"]).unwrap();
+        let cli = Cli::try_parse_from(["hemli", "get", "-n", "ns", "sec", "--ttl", "2h"]).unwrap();
         match cli.command {
             Command::Get { ttl, .. } => {
                 assert_eq!(ttl, Some(7200));
@@ -409,9 +409,8 @@ mod tests {
 
     #[test]
     fn parse_edit_with_ttl_human_duration() {
-        let cli =
-            Cli::try_parse_from(["hemli", "edit", "-n", "myns", "mysecret", "--ttl", "2h"])
-                .unwrap();
+        let cli = Cli::try_parse_from(["hemli", "edit", "-n", "myns", "mysecret", "--ttl", "2h"])
+            .unwrap();
         match cli.command {
             Command::Edit { ttl, clear_ttl, .. } => {
                 assert_eq!(ttl, Some(7200));

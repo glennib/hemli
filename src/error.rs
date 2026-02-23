@@ -7,7 +7,8 @@ pub enum HemliError {
     NoSource,
 
     #[error(
-        "no modifications specified; provide at least one of --ttl, --clear-ttl, --source-sh, or --source-cmd"
+        "no modifications specified; provide at least one of --ttl, --clear-ttl, --source-sh, or \
+         --source-cmd"
     )]
     NoModifications,
 
