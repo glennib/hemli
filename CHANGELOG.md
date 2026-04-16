@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.6](https://github.com/glennib/hemli/compare/v0.1.5...v0.1.6) - 2026-04-16
+
+### Added
+
+- add file locking and atomic writes for index
+
+### Other
+
+- Merge pull request #28 from glennib/renovate/clap_complete-4.x-lockfile
+- Merge pull request #29 from glennib/renovate/clap-4.x-lockfile
+- upgrade dist
+
 ## [0.1.5](https://github.com/glennib/hemli/compare/v0.1.4...v0.1.5) - 2026-03-07
 
 ### Other
