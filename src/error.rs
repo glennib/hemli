@@ -21,6 +21,9 @@ pub enum HemliError {
     #[error(transparent)]
     Serialization(#[from] serde_json::Error),
 
+    #[error("failed to acquire index lock: {0}")]
+    LockFailed(#[source] std::io::Error),
+
     #[error(transparent)]
     Io(#[from] std::io::Error),
 }

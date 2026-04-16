@@ -131,9 +131,9 @@ fn cmd_get(
         store::set_secret(namespace, secret, &stored)?;
 
         let idx_path = index::index_path();
-        let mut idx = index::load_index(&idx_path)?;
-        index::upsert_entry(&mut idx, namespace, secret, stored.created_at);
-        index::save_index(&idx_path, &idx)?;
+        index::update_index(&idx_path, |idx| {
+            index::upsert_entry(idx, namespace, secret, stored.created_at);
+        })?;
 
         debug!("stored secret in keyring and index");
     }
@@ -146,9 +146,9 @@ fn cmd_delete(namespace: &str, secret: &str) -> Result<()> {
     store::delete_secret(namespace, secret)?;
 
     let idx_path = index::index_path();
-    let mut idx = index::load_index(&idx_path)?;
-    index::remove_entry(&mut idx, namespace, secret);
-    index::save_index(&idx_path, &idx)?;
+    index::update_index(&idx_path, |idx| {
+        index::remove_entry(idx, namespace, secret);
+    })?;
 
     eprintln!("Deleted secret '{secret}' from namespace '{namespace}'");
     Ok(())

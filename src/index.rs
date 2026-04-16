@@ -1,7 +1,9 @@
 use std::fs;
+use std::fs::File;
 use std::path::Path;
 use std::path::PathBuf;
 
+use fd_lock::RwLock;
 use jiff::Timestamp;
 use serde::Deserialize;
 use serde::Serialize;
@@ -39,7 +41,30 @@ pub fn save_index(path: &Path, index: &SecretIndex) -> Result<(), HemliError> {
         fs::create_dir_all(parent)?;
     }
     let json = serde_json::to_string_pretty(index)?;
-    fs::write(path, json)?;
+    let tmp_path = path.with_extension("json.tmp");
+    fs::write(&tmp_path, json)?;
+    fs::rename(&tmp_path, path)?;
+    Ok(())
+}
+
+fn lock_file_path(index_path: &Path) -> PathBuf {
+    index_path.with_extension("json.lock")
+}
+
+pub fn update_index(path: &Path, mutate: impl FnOnce(&mut SecretIndex)) -> Result<(), HemliError> {
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+
+    let lock_path = lock_file_path(path);
+    let file = File::create(&lock_path).map_err(HemliError::LockFailed)?;
+    let mut lock = RwLock::new(file);
+    let _guard = lock.write().map_err(HemliError::LockFailed)?;
+
+    let mut index = load_index(path)?;
+    mutate(&mut index);
+    save_index(path, &index)?;
+
     Ok(())
 }
 
@@ -167,5 +192,39 @@ mod tests {
         let index = SecretIndex::default();
         save_index(&path, &index).unwrap();
         assert!(path.exists());
+    }
+
+    #[test]
+    fn save_index_leaves_no_tmp_file() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("index.json");
+        let index = SecretIndex::default();
+        save_index(&path, &index).unwrap();
+
+        let tmp_path = path.with_extension("json.tmp");
+        assert!(!tmp_path.exists());
+        assert!(path.exists());
+    }
+
+    #[test]
+    fn update_index_creates_and_modifies() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("index.json");
+
+        update_index(&path, |idx| {
+            upsert_entry(idx, "ns1", "sec1", Timestamp::now());
+        })
+        .unwrap();
+
+        let loaded = load_index(&path).unwrap();
+        assert_eq!(loaded.entries.len(), 1);
+
+        update_index(&path, |idx| {
+            upsert_entry(idx, "ns2", "sec2", Timestamp::now());
+        })
+        .unwrap();
+
+        let loaded = load_index(&path).unwrap();
+        assert_eq!(loaded.entries.len(), 2);
     }
 }
